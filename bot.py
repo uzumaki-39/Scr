@@ -2,7 +2,6 @@ import re
 import os
 import time
 import json
-import random
 import asyncio
 import logging
 
@@ -17,6 +16,7 @@ import aiofiles
 from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram import Client, filters
+from pyrogram.handlers import RawUpdateHandler
 from pyrogram.errors import (
     UserAlreadyParticipant,
     InviteHashExpired,
@@ -105,7 +105,7 @@ class SessionPool:
                     pass
         self._started = True
         if not self.clients:
-            raise RuntimeError("Session pool is empty — no user clients started")
+            logger.error("Session pool is EMPTY — bot will run but /scr and /mc will fail")
 
     async def get(self):
         async with self.lock:
@@ -539,6 +539,14 @@ async def scrape_messages_task(channel_identifier, limit, bot_client, message):
         return []
 
 # ---------------------------------------------------------
+# Raw update logger (debug — module level)
+# ---------------------------------------------------------
+async def _raw_logger(client, update, users, chats):
+    logger.info(f"RAW UPDATE: {type(update).__name__}")
+
+app.add_handler(RawUpdateHandler(_raw_logger))
+
+# ---------------------------------------------------------
 # Handlers
 # ---------------------------------------------------------
 def setup_scr_handler(app):
@@ -777,6 +785,13 @@ def setup_scr_handler(app):
                                duplicates_removed, "Multiple Chats")
 
 
+# ---------------------------------------------------------
+# Module-level handler registration — runs at import
+# BEFORE main() — so /scr and /mc always exist
+# ---------------------------------------------------------
+setup_scr_handler(app)
+
+
 @app.on_message(filters.command("start", prefixes=["/", ".", ",", "!"])
                 & (filters.group | filters.private))
 async def start(client, message):
@@ -914,9 +929,14 @@ async def clean_cmd(client, message):
 
 
 async def main():
+    # Handlers already registered at module level — just start the pool and bot
     await pool.start_all()
-    setup_scr_handler(app)
     await app.start()
+    try:
+        await app.delete_webhook()
+        logger.info("Webhook cleared")
+    except Exception as e:
+        logger.warning(f"delete_webhook: {e}")
     logger.info("Bot online — session pool ready")
     await asyncio.Event().wait()
 
