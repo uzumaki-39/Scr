@@ -48,8 +48,8 @@ app = Client(
 
 user = Client(
     "session_923294013197",
-    api_id=32367675,
-    api_hash=872c6ef68c5596ba348f31b892e00082,
+    api_id=API_ID,
+    api_hash=API_HASH,
     phone_number="+447346975710",
     workers=1000
 ) # @NOTHIMNARUTO
@@ -388,7 +388,7 @@ async def scrape_messages_task(client, channel_username, limit, bot_client, mess
 
         return await scrape_messages(client, chat.id, limit)
     except Exception as e:
-        await bot_client.send_message(message.chat.id, f"<b>𝐇𝐞𝐲 𝐁𝐫𝐨! 🥲 𝐈𝐧𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐮𝐬𝐞𝐫??𝐚𝐦𝐞 𝐟𝐨𝐫 {channel_username} ❌</b>", reply_to_message_id=message.id)
+        await bot_client.send_message(message.chat.id, f"<b>𝐇𝐞𝐲 𝐁𝐫𝐨! 🥲 𝐈𝐧𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐮??𝐞𝐫??𝐚𝐦𝐞 𝐟𝐨𝐫 {channel_username} ❌</b>", reply_to_message_id=message.id)
         logger.error(f"Failed to scrape from {channel_username}: {e}")
         return []
 
