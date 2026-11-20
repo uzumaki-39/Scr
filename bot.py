@@ -4,6 +4,7 @@ import time
 import json
 import asyncio
 import logging
+import urllib.request
 
 # Python 3.14 compatibility
 try:
@@ -56,6 +57,30 @@ app = Client(
 )
 
 # ---------------------------------------------------------
+# Webhook clear via Bot HTTP API (Pyrogram 2.0.106 has no client method)
+# ---------------------------------------------------------
+def clear_webhook(bot_token):
+    url = f"https://api.telegram.org/bot{bot_token}/deleteWebhook?drop_pending_updates=true"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            body = resp.read().decode(errors="ignore")
+        logger.info(f"Webhook cleared via Bot API: {body[:120]}")
+    except Exception as e:
+        logger.warning(f"deleteWebhook failed: {e}")
+
+
+def get_webhook_info(bot_token):
+    url = f"https://api.telegram.org/bot{bot_token}/getWebhookInfo"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            body = resp.read().decode(errors="ignore")
+        logger.info(f"Webhook info: {body[:300]}")
+        return body
+    except Exception as e:
+        logger.warning(f"getWebhookInfo failed: {e}")
+        return None
+
+# ---------------------------------------------------------
 # Session pool — round-robin across N user accounts
 # ---------------------------------------------------------
 class SessionPool:
@@ -70,10 +95,16 @@ class SessionPool:
         if self._started:
             return
         for name in self.names:
-            # Skip missing session files — never let Pyrogram prompt interactively
-            if not os.path.exists(f"{name}.session"):
-                logger.error(f"Session pool: {name}.session not found — skipping")
+            session_file = f"{name}.session"
+            if not os.path.exists(session_file):
+                logger.error(f"Session pool: {session_file} not found — skipping")
                 continue
+
+            # A zero-byte or near-empty .session file is corrupt and will prompt
+            if os.path.getsize(session_file) < 1024:
+                logger.error(f"Session pool: {session_file} looks corrupt (<1KB) — skipping")
+                continue
+
             c = Client(
                 name,
                 api_id=API_ID,
@@ -82,13 +113,28 @@ class SessionPool:
             )
             try:
                 await asyncio.wait_for(c.start(), timeout=30)
-                # Warm peer cache so updates from known channels resolve
+                # Confirm the session is a USER account, not a bot
+                try:
+                    me = await asyncio.wait_for(c.get_me(), timeout=10)
+                    is_bot = getattr(me, "is_bot", False)
+                    if is_bot:
+                        logger.error(f"Session pool: {name} is a BOT account — useless for scraping, skipping")
+                        try:
+                            await c.stop()
+                        except Exception:
+                            pass
+                        continue
+                except Exception as e:
+                    logger.warning(f"Session pool: get_me failed for {name}: {e}")
+
+                # Warm peer cache (user-only method)
                 try:
                     async for _ in c.get_dialogs():
                         pass
                     logger.info(f"Session pool: peer cache warmed for {name}")
                 except Exception as e:
                     logger.warning(f"Session pool: cache warm failed for {name}: {e}")
+
                 self.clients[name] = c
                 logger.info(f"Session pool: started {name}")
             except asyncio.TimeoutError:
@@ -156,7 +202,6 @@ def lookup_bin(card_number):
             info = dict(BIN_DATA[prefix])
             info["bin"] = prefix
             return info
-    # fallback: guess brand from first digit
     first = card_number[0]
     brand_guess = {
         "4": "Visa",
@@ -932,11 +977,18 @@ async def main():
     # Handlers already registered at module level — just start the pool and bot
     await pool.start_all()
     await app.start()
+
+    # Clear any stale webhook via HTTP Bot API (Pyrogram 2.0.106 has no method)
+    clear_webhook(BOT_TOKEN)
+    get_webhook_info(BOT_TOKEN)
+
+    # Confirm the bot identity — proves the token is live
     try:
-        await app.delete_webhook()
-        logger.info("Webhook cleared")
+        me = await app.get_me()
+        logger.info(f"Bot identity: @{me.username} (id={me.id})")
     except Exception as e:
-        logger.warning(f"delete_webhook: {e}")
+        logger.error(f"get_me failed — token may be invalid: {e}")
+
     logger.info("Bot online — session pool ready")
     await asyncio.Event().wait()
 
