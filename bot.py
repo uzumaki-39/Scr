@@ -2,7 +2,15 @@ import re
 import os
 import asyncio
 import logging
+
+# Python 3.14 compatibility
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 import aiofiles
+
 from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram import Client, filters
@@ -13,7 +21,9 @@ from pyrogram.errors import (
     PeerIdInvalid,
     InviteRequestSent
 )
+
 from urllib.parse import urlparse
+
 from config import (
     API_ID,
     API_HASH,
@@ -21,7 +31,9 @@ from config import (
     ADMIN_LIMIT,
     ADMIN_IDS,
     DEFAULT_LIMIT
-) # @NOTHIMNARUTO
+)
+
+# @NOTHIMNARUTO
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -376,7 +388,7 @@ async def scrape_messages_task(client, channel_username, limit, bot_client, mess
 
         return await scrape_messages(client, chat.id, limit)
     except Exception as e:
-        await bot_client.send_message(message.chat.id, f"<b>𝐇𝐞𝐲 𝐁𝐫𝐨! 🥲 𝐈𝐧𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐮𝐬𝐞𝐫𝐧𝐚𝐦𝐞 𝐟𝐨𝐫 {channel_username} ❌</b>", reply_to_message_id=message.id)
+        await bot_client.send_message(message.chat.id, f"<b>𝐇𝐞𝐲 𝐁𝐫𝐨! 🥲 𝐈𝐧𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐮𝐬𝐞𝐫??𝐚𝐦𝐞 𝐟𝐨𝐫 {channel_username} ❌</b>", reply_to_message_id=message.id)
         logger.error(f"Failed to scrape from {channel_username}: {e}")
         return []
 
