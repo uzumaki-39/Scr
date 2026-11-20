@@ -1,6 +1,6 @@
 # Pyrogram setup
-API_ID = "287047"  # Replace this API ID with your actual API ID
-API_HASH = "4fa9a7becae988952871a24facfac"  # Replace this API HASH with your actual API HASH
+API_ID = "32367675"  # Replace this API ID with your actual API ID
+API_HASH = "872c6ef68c5596ba348f31b892e00082"  # Replace this API HASH with your actual API HASH
 BOT_TOKEN = "9017855531:AAE57jgJSQ5h3jns4vaKnKVPp11tl7L2Xcw"  # Replace this BOT_TOKEN
 
 # Admin IDs
