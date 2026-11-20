@@ -1,21 +1,23 @@
-# config.py
-import os
-from dotenv import load_dotenv
+# Pyrogram setup
+API_ID = "32367675"  # Replace this API ID with your actual API ID
+API_HASH = "872c6ef68c5596ba348f31b892e00082"  # Replace this API HASH with your actual API HASH
+BOT_TOKEN = "9017855531:AAE57jgJSQ5h3jns4vaKnKVPp11tl7L2Xcw"  # Replace this BOT_TOKEN
 
-load_dotenv()
+# Admin IDs
+ADMIN_IDS = [8801932812,5248903529]
 
-API_ID = int(os.environ["API_ID"])
-API_HASH = os.environ["API_HASH"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
 
-ADMIN_IDS = [int(x) for x in os.environ.get("ADMIN_IDS", "").split(",") if x.strip()]
-DEFAULT_LIMIT = int(os.environ.get("DEFAULT_LIMIT", "10000"))
-ADMIN_LIMIT = int(os.environ.get("ADMIN_LIMIT", "50000"))
+DEFAULT_LIMIT = 10000
+ADMIN_LIMIT = 50000
 
-BOT_SESSION_NAME = os.environ.get("BOT_SESSION_NAME", "bot_session")
 
-# Session pool — comma-separated names. First one runs on startup;
-# the rest are lazily started and rotated for scrapes.
-SESSION_POOL_NAMES = [
-    x.strip() for x in os.environ.get("SESSION_POOL_NAMES", "user_session_1").split(",") if x.strip()
-]
+
+
+
+
+
+
+
+
+
+
