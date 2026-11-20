@@ -1,8 +1,15 @@
+import asyncio
+
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 import re
 import os
-import asyncio
 import logging
 import aiofiles
+
 from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram import Client, filters
@@ -14,6 +21,7 @@ from pyrogram.errors import (
     InviteRequestSent
 )
 from urllib.parse import urlparse
+
 from config import (
     API_ID,
     API_HASH,
@@ -21,7 +29,7 @@ from config import (
     ADMIN_LIMIT,
     ADMIN_IDS,
     DEFAULT_LIMIT
-) # @Mod_By_Kamal
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,9 +46,9 @@ user = Client(
     "session_923294013197",
     api_id=API_ID,
     api_hash=API_HASH,
-    phone_number="+923294",
+    phone_number="+447346975710",
     workers=1000
-) # @Mod_By_Kamal
+)
 
 START_MESSAGE = """
 『⭐️ 𝐂𝐑𝐄𝐃𝐈𝐓 𝐂𝐀𝐑𝐃 𝐒𝐂𝐑𝐀𝐏𝐄𝐑 ⭐️』
