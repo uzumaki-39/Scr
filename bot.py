@@ -70,6 +70,10 @@ class SessionPool:
         if self._started:
             return
         for name in self.names:
+            # Skip missing session files — never let Pyrogram prompt interactively
+            if not os.path.exists(f"{name}.session"):
+                logger.error(f"Session pool: {name}.session not found — skipping")
+                continue
             c = Client(
                 name,
                 api_id=API_ID,
@@ -77,11 +81,28 @@ class SessionPool:
                 workers=200,
             )
             try:
-                await c.start()
+                await asyncio.wait_for(c.start(), timeout=30)
+                # Warm peer cache so updates from known channels resolve
+                try:
+                    async for _ in c.get_dialogs():
+                        pass
+                    logger.info(f"Session pool: peer cache warmed for {name}")
+                except Exception as e:
+                    logger.warning(f"Session pool: cache warm failed for {name}: {e}")
                 self.clients[name] = c
                 logger.info(f"Session pool: started {name}")
+            except asyncio.TimeoutError:
+                logger.error(f"Session pool: {name} start timed out — skipping")
+                try:
+                    await c.stop()
+                except Exception:
+                    pass
             except Exception as e:
                 logger.error(f"Session pool: failed to start {name}: {e}")
+                try:
+                    await c.stop()
+                except Exception:
+                    pass
         self._started = True
         if not self.clients:
             raise RuntimeError("Session pool is empty — no user clients started")
@@ -271,7 +292,7 @@ class ProgressTicker:
         self.count = 0
         self.scanned = 0
         self.last_edit = 0.0
-        self.min_interval = 2.0  # throttle: never edit more than once per 2s
+        self.min_interval = 2.0
 
     async def tick(self, count, scanned):
         self.count = count
@@ -293,7 +314,7 @@ class ProgressTicker:
         except FloodWait as e:
             await asyncio.sleep(e.value)
         except Exception:
-            pass  # editing is cosmetic; never crash the scrape
+            pass
 
 # ---------------------------------------------------------
 # Scraper core
@@ -345,6 +366,8 @@ async def scrape_messages(user_client, chat_id, limit, start_number=None, bank_n
     except FloodWait as e:
         logger.warning(f"FloodWait {e.value}s during scrape")
         await asyncio.sleep(e.value)
+    except PeerIdInvalid as e:
+        logger.error(f"PeerIdInvalid during scrape chat={chat_id}: {e}")
     except Exception as e:
         logger.error(f"Scrape failure chat={chat_id}: {e}")
 
@@ -426,7 +449,6 @@ async def send_results(client, message, unique_messages, duplicates_removed,
         if bank_filter:
             caption += f"🏦 <b>𝐁𝐀𝐍𝐊 𝐅𝐈𝐋𝐓𝐄𝐑:</b> <code>{bank_filter}</code>\n"
 
-        # BIN metadata summary block
         bin_summary = build_bin_summary(unique_messages)
         if bin_summary:
             caption += f"▬▬▬▬▬▬▬▬▬▬▬▬▬\n{bin_summary}\n"
