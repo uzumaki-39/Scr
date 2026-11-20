@@ -48,9 +48,9 @@ app = Client(
 
 user = Client(
     "session_923294013197",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    phone_number="+923294",
+    api_id=32367675,
+    api_hash=872c6ef68c5596ba348f31b892e00082,
+    phone_number="+447346975710",
     workers=1000
 ) # @NOTHIMNARUTO
 
